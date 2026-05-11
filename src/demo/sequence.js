@@ -1,0 +1,16 @@
+export const DEMO_SEQUENCE = [
+  { cmd: "AN12JUNBOMJFK", delay: 1500, caption: "Search availability BOM → JFK" },
+  { cmd: "SS1Y1", delay: 2000, caption: "Sell economy on AA 101" },
+  { cmd: "NM1SHARMA/RAJESH MR", delay: 2000, caption: "Add passenger name" },
+  { cmd: "9DEL 9999999-M", delay: 1500, caption: "Add mobile number" },
+  { cmd: "3VGML1-1.1", delay: 1500, caption: "Add vegetarian meal" },
+  { cmd: "4G1/24C-1.1", delay: 2000, caption: "Assign seat 24C" },
+  { cmd: "7TAW14JUN/", delay: 1500, caption: "Set ticket time limit" },
+  { cmd: "6RAJESH", delay: 1000, caption: "Received from" },
+  { cmd: "ER", delay: 2500, caption: "End and retrieve — PNR created" },
+  { cmd: "*XKMT7Q", delay: 2000, caption: "Retrieve PNR for servicing" },
+  { cmd: "WP", delay: 1500, caption: "Price itinerary" },
+  { cmd: "4G1/4A-1.1", delay: 2000, caption: "Change seat to business row" },
+  { cmd: "WC1J", delay: 1500, caption: "Upgrade class to J" },
+  { cmd: "QP/1", delay: 1500, caption: "Queue for ticketing" },
+];

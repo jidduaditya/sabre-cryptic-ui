@@ -1,0 +1,66 @@
+export const FLIGHTS = [
+  {
+    id: 1, airline: "American Airlines", code: "AA", flight: "AA 101",
+    number: 101, equipment: "77W",
+    dep: "BOM", depCity: "MUMBAI", arr: "JFK", arrCity: "NEW YORK",
+    depTime: "08:15", arrTime: "14:30+1", duration: "15h 15m",
+    stops: 0, stopCities: [], source: "NDC",
+    inventory: { J: 7, C: 7, D: 7, Y: 7, B: 7, M: 7, H: 7, Q: 4, K: 0 },
+    fares: [
+      { cls: "Y", name: "Economy Main", basis: "YLOWUS", price: 980, bags: "1x23kg", changes: "Fee USD200" },
+      { cls: "B", name: "Economy Flex", basis: "BLOWUS", price: 1490, bags: "2x23kg", changes: "Free" },
+      { cls: "J", name: "Business", basis: "JCBUS", price: 3200, bags: "2x32kg", changes: "Free" },
+    ],
+  },
+  {
+    id: 2, airline: "Emirates", code: "EK", flight: "EK 502",
+    number: 502, equipment: "77W",
+    dep: "BOM", depCity: "MUMBAI", arr: "JFK", arrCity: "NEW YORK",
+    depTime: "03:45", arrTime: "13:20+1", duration: "17h 35m",
+    stops: 1, stopCities: ["DXB"], source: "EDIFACT",
+    inventory: { J: 4, C: 4, D: 4, Y: 7, B: 7, M: 7, H: 7, Q: 7, K: 3 },
+    fares: [
+      { cls: "Y", name: "Economy Saver", basis: "YECSAV", price: 980, bags: "1x23kg", changes: "No changes" },
+      { cls: "B", name: "Economy Flex", basis: "BECFLX", price: 1340, bags: "2x23kg", changes: "Free" },
+      { cls: "J", name: "Business", basis: "JCBUS", price: 3500, bags: "2x32kg", changes: "Free" },
+    ],
+  },
+  {
+    id: 3, airline: "Air India", code: "AI", flight: "AI 127",
+    number: 127, equipment: "77W",
+    dep: "BOM", depCity: "MUMBAI", arr: "JFK", arrCity: "NEW YORK",
+    depTime: "13:00", arrTime: "18:45+1", duration: "14h 45m",
+    stops: 0, stopCities: [], source: "NDC",
+    inventory: { J: 2, C: 2, D: 2, Y: 7, B: 7, M: 7, H: 7, Q: 7, K: 7 },
+    fares: [
+      { cls: "Y", name: "Economy", basis: "YOWRT", price: 890, bags: "1x23kg", changes: "Fee USD150" },
+      { cls: "J", name: "Business", basis: "JCBUS", price: 2800, bags: "2x32kg", changes: "Free" },
+    ],
+  },
+  {
+    id: 4, airline: "Lufthansa", code: "LH", flight: "LH 763",
+    number: 763, equipment: "77W",
+    dep: "BOM", depCity: "MUMBAI", arr: "JFK", arrCity: "NEW YORK",
+    depTime: "22:15", arrTime: "06:40+2", duration: "19h 25m",
+    stops: 1, stopCities: ["FRA"], source: "EDIFACT",
+    inventory: { J: 3, C: 3, D: 3, Y: 7, B: 7, M: 4, H: 2, Q: 0, K: 0 },
+    fares: [
+      { cls: "Y", name: "Economy", basis: "YOWEU", price: 1050, bags: "1x23kg", changes: "Fee EUR150" },
+      { cls: "B", name: "Economy Flex", basis: "BOWEU", price: 1580, bags: "2x23kg", changes: "Free" },
+      { cls: "J", name: "Business", basis: "JCBUS", price: 3400, bags: "2x32kg", changes: "Free" },
+    ],
+  },
+  {
+    id: 5, airline: "Qatar Airways", code: "QR", flight: "QR 744",
+    number: 744, equipment: "77W",
+    dep: "BOM", depCity: "MUMBAI", arr: "JFK", arrCity: "NEW YORK",
+    depTime: "04:30", arrTime: "15:10+1", duration: "18h 40m",
+    stops: 1, stopCities: ["DOH"], source: "EDIFACT",
+    inventory: { J: 5, C: 5, D: 5, Y: 7, B: 7, M: 7, H: 7, Q: 6, K: 4 },
+    fares: [
+      { cls: "Y", name: "Economy Lite", basis: "YLITE", price: 920, bags: "1x23kg", changes: "Fee USD175" },
+      { cls: "B", name: "Economy Classic", basis: "BCLAS", price: 1380, bags: "2x23kg", changes: "Free" },
+      { cls: "J", name: "Business", basis: "JCBUS", price: 3600, bags: "2x32kg", changes: "Free" },
+    ],
+  },
+];
