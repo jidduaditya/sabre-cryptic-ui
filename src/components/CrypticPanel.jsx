@@ -5,7 +5,7 @@ import { getAutocomplete } from "../engine/preview";
 import { useBookingStore } from "../store/bookingStore";
 
 const BOOT_LINES = [
-  { text: "SABRE MOSAIC V2  |  BIDIRECTIONAL MODE  |  AGENT: ADITYA.S", type: "header" },
+  { text: "CY MOSAIC V2  |  BIDIRECTIONAL MODE  |  AGENT: ADITYA.S", type: "header" },
   { text: "------------------------------------------------------", type: "header" },
   { text: "COMMANDS ON LEFT ↔ INTERACTIONS ON RIGHT", type: "response" },
   { text: "BOTH PANELS STAY IN SYNC AT EVERY STEP", type: "response" },
@@ -133,7 +133,7 @@ export function CrypticPanel() {
             // Auto-detect from text
             if (text.startsWith(">") && !text.startsWith("><")) return C.termCmd;
             if (text.startsWith("**") && (text.includes("CANNOT") || text.includes("MISSING") || text.includes("NOT"))) return C.amber;
-            if (text.startsWith("**") || text.startsWith("---") || text.startsWith("SABRE")) return C.termHi;
+            if (text.startsWith("**") || text.startsWith("---") || text.startsWith("CY")) return C.termHi;
             if (text.startsWith("===")) return "#818CF8";
             return C.termText;
           };

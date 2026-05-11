@@ -19,7 +19,7 @@ register({
   stages: "*",
   parse: () => ({}),
   execute: () => {
-    let out = "** SABRE FORMAT FINDER **\n";
+    let out = "** CY FORMAT FINDER **\n";
     out += "TOPICS: AN  SS  NM  WP  Q  4G  7T  3  ER  FF\n";
     out += "TYPE HELP {TOPIC} FOR DETAILS\n\n";
     out += "QUICK REFERENCE:\n";

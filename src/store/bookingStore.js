@@ -389,7 +389,7 @@ export const useBookingStore = create((set, get) => ({
 
 function buildAvailResponse(flights, date, org, dest) {
   if (flights.length === 0) return `** NO FLIGHTS FOUND ${org}${dest} ${date}\n><`;
-  let out = `** SABRE AVAILABILITY - ${org}${dest} ${date} **\n`;
+  let out = `** AVAILABILITY - ${org}${dest} ${date} **\n`;
   flights.forEach((f, i) => {
     const inv = Object.entries(f.inventory)
       .map(([c, n]) => `${c}${n}`)
