@@ -27,7 +27,7 @@ export function TopBar() {
       fontFamily: sans, fontSize: 11, flexShrink: 0,
     }}>
       <span style={{ color: C.accent, fontWeight: 700, letterSpacing: "0.08em" }}>
-        CY MOSAIC
+        CRYPTIC UI
       </span>
       <span style={{ color: C.muted }}>V2</span>
       <div style={{ flex: 1 }} />

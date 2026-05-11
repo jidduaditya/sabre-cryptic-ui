@@ -5,7 +5,7 @@ import { getAutocomplete } from "../engine/preview";
 import { useBookingStore } from "../store/bookingStore";
 
 const BOOT_LINES = [
-  { text: "CY MOSAIC V2  |  BIDIRECTIONAL MODE  |  AGENT: ADITYA.S", type: "header" },
+  { text: "CRYPTIC UI  |  BIDIRECTIONAL MODE  |  AGENT: ADITYA.S", type: "header" },
   { text: "------------------------------------------------------", type: "header" },
   { text: "COMMANDS ON LEFT ↔ INTERACTIONS ON RIGHT", type: "response" },
   { text: "BOTH PANELS STAY IN SYNC AT EVERY STEP", type: "response" },
