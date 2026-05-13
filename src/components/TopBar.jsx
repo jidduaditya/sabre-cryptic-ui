@@ -17,7 +17,7 @@ const STAGE_LABELS = {
   SERVICING: "Servicing",
 };
 
-export function TopBar() {
+export function TopBar({ viewMode, onViewModeChange }) {
   const stage = useBookingStore(s => s.stage);
   const locator = useBookingStore(s => s.pnr.locator || s.servicing.activeLocator);
   const softLocator = useBookingStore(s => s.pnr.softLocator);
@@ -78,6 +78,27 @@ export function TopBar() {
           </button>
         </span>
       )}
+
+      {/* View mode toggle */}
+      <div style={{
+        display: "flex", borderRadius: 4, overflow: "hidden",
+        border: `1px solid ${C.border}`, marginLeft: 4,
+      }}>
+        {[
+          { key: "cryptic", label: "Cryptic" },
+          { key: "both", label: "Both" },
+          { key: "ui", label: "UI" },
+        ].map(opt => (
+          <button key={opt.key} onClick={() => onViewModeChange(opt.key)} style={{
+            padding: "2px 10px", fontSize: 9, fontWeight: 600, cursor: "pointer",
+            border: "none", letterSpacing: "0.04em",
+            background: viewMode === opt.key ? E.accent : "transparent",
+            color: viewMode === opt.key ? "#fff" : C.muted,
+          }}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       <div style={{ flex: 1 }} />
       <span style={{
