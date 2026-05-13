@@ -170,27 +170,11 @@ export const useBookingStore = create((set, get) => ({
       return `** MAX PASSENGERS REACHED - ${paxCount} ALREADY ENTERED\n><`;
     }
     const id = `${pax.length + 1}.1`;
-    const nmLine = ` ${id} ${lastName}/${firstName} ${title}\n`;
-
+    const response = ` ${id} ${lastName}/${firstName} ${title}\n><`;
     set({
       passengers: [...pax, { id, lastName, firstName, title, paxType }],
-      _lastAction: { source, type: "addPassenger" },
-    });
-
-    // Auto-commit when all passengers entered
-    if (get().passengers.length >= paxCount) {
-      const commitResponse = get()._autoCommit(source);
-      const fullResponse = nmLine + commitResponse;
-      set({
-        _pendingEcho: source === "ui" ? { cmd: `NM1${lastName}/${firstName} ${title}`, response: fullResponse } : null,
-      });
-      return fullResponse;
-    }
-
-    // Normal flow
-    const response = nmLine + "><";
-    set({
       _pendingEcho: source === "ui" ? { cmd: `NM1${lastName}/${firstName} ${title}`, response } : null,
+      _lastAction: { source, type: "addPassenger" },
     });
     get()._checkSoftPNR();
     return response;
@@ -462,37 +446,6 @@ export const useBookingStore = create((set, get) => ({
       const loc = generateLocator();
       set({ pnr: { ...s.pnr, softLocator: loc } });
     }
-  },
-
-  _autoCommit: (source) => {
-    const s = get();
-    const locator = generateLocator();
-
-    // Build minimal ER response
-    let out = `** AUTO-COMMIT **\n`;
-    out += `--- PNR CREATED ---\n`;
-    out += `RP/DELBR2101/DELBR2101\n`;
-    out += `** ${locator} **\n`;
-    s.passengers.forEach((p, i) => {
-      out += ` ${i + 1}.${p.lastName}/${p.firstName} ${p.title}\n`;
-    });
-    if (s.booking.segment) {
-      const seg = s.booking.segment;
-      out += ` ${seg.flight} ${seg.cls} ${seg.date} ${seg.route} ${seg.status}\n`;
-    }
-    out += `><`;
-
-    // Save PNR snapshot for later retrieval
-    const pnrSnapshot = buildCurrentPNR({ ...s, pnr: { locator, status: "Confirmed", softLocator: null } });
-    if (pnrSnapshot) PNRS[locator] = pnrSnapshot;
-
-    set({
-      stage: "CONFIRMED",
-      pnr: { locator, status: "Confirmed", softLocator: null },
-      _lastAction: { source, type: "autoCommit" },
-    });
-
-    return out;
   },
 
   navigateToStage: (targetStage, source) => {
