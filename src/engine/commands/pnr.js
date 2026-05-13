@@ -1,6 +1,10 @@
 import { register } from "../registry";
 import { PNRS } from "../../data/pnrs";
 
+function getCurrentLocator(store) {
+  return store.servicing?.pnrData?.locator || store.servicing?.activeLocator || store.pnr?.locator || null;
+}
+
 // ER — end and retrieve
 register({
   pattern: /^ER$/,
@@ -61,9 +65,9 @@ register({
   stages: ["SERVICING", "CONFIRMED"],
   parse: () => ({}),
   execute: (data, store) => {
-    const pnr = store.servicing?.pnrData;
-    if (!pnr) return { response: "** NO PNR IN WORK AREA\n><" };
-    const result = store.retrievePNR(pnr.locator, "terminal");
+    const locator = getCurrentLocator(store);
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const result = store.retrievePNR(locator, "terminal");
     return { response: result || "** NO PNR IN WORK AREA\n><" };
   },
 });
@@ -74,9 +78,9 @@ register({
   stages: ["SERVICING", "CONFIRMED"],
   parse: () => ({}),
   execute: (data, store) => {
-    const pnr = store.servicing?.pnrData;
-    if (!pnr) return { response: "** NO PNR IN WORK AREA\n><" };
-    const result = store.retrievePNR(pnr.locator, "terminal");
+    const locator = getCurrentLocator(store);
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const result = store.retrievePNR(locator, "terminal");
     return { response: result || "** NO PNR IN WORK AREA\n><" };
   },
 });
@@ -87,7 +91,9 @@ register({
   stages: ["SERVICING", "CONFIRMED"],
   parse: () => ({}),
   execute: (data, store) => {
-    const pnr = store.servicing?.pnrData;
+    const locator = getCurrentLocator(store);
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const pnr = store.servicing?.pnrData || PNRS[locator];
     if (!pnr) return { response: "** NO PNR IN WORK AREA\n><" };
     let out = "** ITINERARY **\n";
     pnr.segments?.forEach(seg => {
@@ -104,7 +110,9 @@ register({
   stages: ["SERVICING", "CONFIRMED"],
   parse: () => ({}),
   execute: (data, store) => {
-    const pnr = store.servicing?.pnrData;
+    const locator = getCurrentLocator(store);
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const pnr = store.servicing?.pnrData || PNRS[locator];
     if (!pnr) return { response: "** NO PNR IN WORK AREA\n><" };
     let out = "** NAMES **\n";
     pnr.passengers?.forEach((p, i) => { out += ` ${i + 1}.${p.name}\n`; });
@@ -119,7 +127,9 @@ register({
   stages: ["SERVICING", "CONFIRMED"],
   parse: () => ({}),
   execute: (data, store) => {
-    const pnr = store.servicing?.pnrData;
+    const locator = getCurrentLocator(store);
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const pnr = store.servicing?.pnrData || PNRS[locator];
     if (!pnr) return { response: "** NO PNR IN WORK AREA\n><" };
     let out = "** TICKET FIELD **\n";
     if (pnr.ticketing) out += ` ${pnr.ticketing.detail}\n`;
@@ -135,7 +145,9 @@ register({
   stages: ["SERVICING", "CONFIRMED"],
   parse: () => ({}),
   execute: (data, store) => {
-    const pnr = store.servicing?.pnrData;
+    const locator = getCurrentLocator(store);
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const pnr = store.servicing?.pnrData || PNRS[locator];
     if (!pnr) return { response: "** NO PNR IN WORK AREA\n><" };
     let out = "** PRE-RESERVED SEATS **\n";
     pnr.seats?.forEach(s => { out += ` SEG ${s.seg} SEAT ${s.seat} PAX ${s.pax}\n`; });

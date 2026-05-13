@@ -70,5 +70,11 @@ register({
   pattern: /^IR$/,
   stages: "*",
   parse: () => ({}),
-  execute: (data, store) => ({ response: store.resetBooking("terminal") }),
+  execute: (data, store) => {
+    const locator = store.servicing?.activeLocator || store.pnr?.locator || null;
+    store.resetBooking("terminal");
+    if (!locator) return { response: "** NO PNR IN WORK AREA\n><" };
+    const result = store.retrievePNR(locator, "terminal");
+    return { response: result || `** RECORD NOT FOUND - ${locator}\n><` };
+  },
 });
