@@ -1,7 +1,18 @@
 import { useState } from "react";
 import { E, eSans, mono } from "../../tokens";
 import { useBookingStore } from "../../store/bookingStore";
-import { IATA } from "../../data/iata";
+const COUNTRIES = [
+  { code: "IN", name: "India" },
+  { code: "US", name: "United States" },
+  { code: "UK", name: "United Kingdom" },
+  { code: "AE", name: "UAE" },
+  { code: "SG", name: "Singapore" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
+  { code: "JP", name: "Japan" },
+];
 
 const PHONE_TYPES = [
   { value: "M", label: "Mobile" },
@@ -13,7 +24,7 @@ export function ContactPanel() {
   const contact = useBookingStore(s => s.contact);
   const store = useBookingStore();
 
-  const [city, setCity] = useState("DEL");
+  const [city, setCity] = useState("IN");
   const [phone, setPhone] = useState("");
   const [phoneType, setPhoneType] = useState("M");
   const [email, setEmail] = useState("");
@@ -66,8 +77,8 @@ export function ContactPanel() {
               <div style={{ width: 160 }}>
                 <select value={city} onChange={e => setCity(e.target.value)}
                   style={{ ...inputStyle, cursor: "pointer" }}>
-                  {Object.entries(IATA).map(([code, name]) => (
-                    <option key={code} value={code}>{name} ({code})</option>
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
                   ))}
                 </select>
               </div>
