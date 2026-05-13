@@ -1,4 +1,5 @@
-import { C, sans } from "../tokens";
+import { useState } from "react";
+import { C, E, sans } from "../tokens";
 import { useBookingStore } from "../store/bookingStore";
 
 const STAGE_LABELS = {
@@ -19,6 +20,25 @@ const STAGE_LABELS = {
 export function TopBar() {
   const stage = useBookingStore(s => s.stage);
   const locator = useBookingStore(s => s.pnr.locator || s.servicing.activeLocator);
+  const softLocator = useBookingStore(s => s.pnr.softLocator);
+  const store = useBookingStore();
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleNewSearch = () => {
+    if (stage === "CONFIRMED" || stage === "IDLE") {
+      store.resetBooking("ui");
+      setShowConfirm(false);
+    } else {
+      setShowConfirm(true);
+    }
+  };
+
+  const confirmReset = () => {
+    store.resetBooking("ui");
+    setShowConfirm(false);
+  };
+
+  const displayLocator = locator || softLocator;
 
   return (
     <div style={{
@@ -26,24 +46,54 @@ export function TopBar() {
       display: "flex", alignItems: "center", padding: "0 16px", gap: 12,
       fontFamily: sans, fontSize: 11, flexShrink: 0,
     }}>
-      <span style={{ color: C.accent, fontWeight: 700, letterSpacing: "0.08em" }}>
+      <span style={{ color: E.accent, fontWeight: 700, letterSpacing: "0.08em" }}>
         CRYPTIC UI
       </span>
       <span style={{ color: C.muted }}>V2</span>
+
+      {stage !== "IDLE" && !showConfirm && (
+        <button data-new-search onClick={handleNewSearch} style={{
+          padding: "3px 10px", borderRadius: 12, fontSize: 9, fontWeight: 600,
+          background: "transparent", border: `1px solid ${C.border}`,
+          color: C.muted, cursor: "pointer", letterSpacing: "0.05em",
+        }}>
+          NEW SEARCH
+        </button>
+      )}
+
+      {showConfirm && (
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: C.muted, fontSize: 10 }}>Discard booking?</span>
+          <button onClick={confirmReset} style={{
+            padding: "2px 8px", borderRadius: 4, fontSize: 9,
+            background: E.accent, border: "none", color: "#fff", cursor: "pointer",
+          }}>
+            Yes
+          </button>
+          <button onClick={() => setShowConfirm(false)} style={{
+            padding: "2px 8px", borderRadius: 4, fontSize: 9,
+            background: "transparent", border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer",
+          }}>
+            No
+          </button>
+        </span>
+      )}
+
       <div style={{ flex: 1 }} />
       <span style={{
-        color: stage === "IDLE" ? C.muted : C.accent,
+        color: stage === "IDLE" ? C.muted : E.accent,
         fontWeight: 500, letterSpacing: "0.05em",
       }}>
         {STAGE_LABELS[stage] || stage}
       </span>
-      {locator && (
+      {displayLocator && (
         <span style={{
-          background: C.accentDim, border: `1px solid ${C.accentBorder}`,
-          borderRadius: 4, padding: "2px 8px", color: C.accent,
+          background: softLocator && !locator ? "transparent" : E.accentDim,
+          border: `1px ${softLocator && !locator ? "dashed" : "solid"} ${E.accentBorder}`,
+          borderRadius: 4, padding: "2px 8px", color: E.accent,
           fontWeight: 600, fontSize: 10, letterSpacing: "0.1em",
         }}>
-          {locator}
+          {displayLocator}{softLocator && !locator ? " (draft)" : ""}
         </span>
       )}
       <span style={{ color: C.muted, fontSize: 10 }}>AGENT: ADITYA.S</span>

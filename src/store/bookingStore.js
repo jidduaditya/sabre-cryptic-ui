@@ -39,7 +39,9 @@ const initialState = {
 
   ticketing: { ttlDate: null, ttlQueue: 9, receivedFrom: null },
 
-  pnr: { locator: null, status: null },
+  pnr: { locator: null, status: null, softLocator: null },
+
+  _etBanner: null,
 
   servicing: { activeLocator: null, pnrData: null, history: [] },
 
@@ -111,7 +113,7 @@ export const useBookingStore = create((set, get) => ({
 
   // --- Actions ---
 
-  searchAvailability: (origin, dest, date, source, airlineFilter = null) => {
+  searchAvailability: (origin, dest, date, source, airlineFilter = null, paxCount = null) => {
     const flights = FLIGHTS.filter(f => {
       const matchRoute = f.dep === origin && f.arr === dest;
       const matchAirline = airlineFilter ? f.code === airlineFilter : true;
@@ -126,7 +128,7 @@ export const useBookingStore = create((set, get) => ({
 
     set({
       stage: "AVAILABILITY",
-      search: { origin, destination: dest, date, paxCount: get().search.paxCount },
+      search: { origin, destination: dest, date, paxCount: paxCount || get().search.paxCount },
       availability: { flights, filterAirline: airlineFilter },
       _pendingEcho: echo,
       _lastAction: { source, type: "searchAvailability" },
@@ -157,18 +159,40 @@ export const useBookingStore = create((set, get) => ({
       _pendingEcho: source === "ui" ? { cmd: `SS1${cls}${lineNum}`, response } : null,
       _lastAction: { source, type: "sellFare" },
     });
+    get()._checkSoftPNR();
     return response;
   },
 
   addPassenger: (lastName, firstName, title, paxType, source) => {
     const pax = get().passengers;
-    const id = `1.${pax.length + 1}`;
-    const response = ` ${id} ${lastName}/${firstName} ${title}\n><`;
+    const paxCount = get().search.paxCount;
+    if (pax.length >= paxCount) {
+      return `** MAX PASSENGERS REACHED - ${paxCount} ALREADY ENTERED\n><`;
+    }
+    const id = `${pax.length + 1}.1`;
+    const nmLine = ` ${id} ${lastName}/${firstName} ${title}\n`;
+
     set({
       passengers: [...pax, { id, lastName, firstName, title, paxType }],
-      _pendingEcho: source === "ui" ? { cmd: `NM1${lastName}/${firstName} ${title}`, response } : null,
       _lastAction: { source, type: "addPassenger" },
     });
+
+    // Auto-commit when all passengers entered
+    if (get().passengers.length >= paxCount) {
+      const commitResponse = get()._autoCommit(source);
+      const fullResponse = nmLine + commitResponse;
+      set({
+        _pendingEcho: source === "ui" ? { cmd: `NM1${lastName}/${firstName} ${title}`, response: fullResponse } : null,
+      });
+      return fullResponse;
+    }
+
+    // Normal flow
+    const response = nmLine + "><";
+    set({
+      _pendingEcho: source === "ui" ? { cmd: `NM1${lastName}/${firstName} ${title}`, response } : null,
+    });
+    get()._checkSoftPNR();
     return response;
   },
 
@@ -186,6 +210,7 @@ export const useBookingStore = create((set, get) => ({
       _pendingEcho: source === "ui" ? { cmd: `9${city} ${number}-${type}`, response } : null,
       _lastAction: { source, type: "addContact" },
     });
+    get()._checkSoftPNR();
     return response;
   },
 
@@ -231,12 +256,28 @@ export const useBookingStore = create((set, get) => ({
   },
 
   assignSeat: (seat, segment, pax, source) => {
-    const filtered = get().seats.filter(s => !(s.segment === segment && s.pax === pax));
+    const currentSeats = get().seats;
+    const paxCount = get().search.paxCount;
+    const isReplacement = currentSeats.some(s => s.segment === segment && s.pax === pax);
+    if (!isReplacement && currentSeats.length >= paxCount) {
+      return `** ALL PASSENGERS HAVE SEATS ASSIGNED\n><`;
+    }
+    const filtered = currentSeats.filter(s => !(s.segment === segment && s.pax === pax));
     const response = `SEAT ${seat} ASSIGNED - ${pax}\n><`;
     set({
       seats: [...filtered, { segment, seat, pax }],
       _pendingEcho: source === "ui" ? { cmd: `4G${segment}/${seat}-${pax}`, response } : null,
       _lastAction: { source, type: "assignSeat" },
+    });
+    return response;
+  },
+
+  removeSeat: (seatKey, source) => {
+    const response = `SEAT ${seatKey} REMOVED\n><`;
+    set({
+      seats: get().seats.filter(s => s.seat !== seatKey),
+      _pendingEcho: source === "ui" ? { cmd: `4GX/${seatKey}`, response } : null,
+      _lastAction: { source, type: "removeSeat" },
     });
     return response;
   },
@@ -262,6 +303,7 @@ export const useBookingStore = create((set, get) => ({
       _pendingEcho: source === "ui" ? { cmd: `7TAW${date}/`, response } : null,
       _lastAction: { source, type: "setTTL" },
     });
+    get()._checkSoftPNR();
     return response;
   },
 
@@ -272,6 +314,7 @@ export const useBookingStore = create((set, get) => ({
       _pendingEcho: source === "ui" ? { cmd: `6${name}`, response } : null,
       _lastAction: { source, type: "setReceivedFrom" },
     });
+    get()._checkSoftPNR();
     return response;
   },
 
@@ -286,6 +329,12 @@ export const useBookingStore = create((set, get) => ({
   },
 
   advanceToReview: (source) => {
+    const missing = get().getMissingPrint();
+    if (missing.length > 0) {
+      const response = `** CANNOT REVIEW - MISSING: ${missing.join(", ")}\n><`;
+      if (source === "ui") set({ _pendingEcho: { cmd: "", response } });
+      return response;
+    }
     set({
       stage: "REVIEW",
       _lastAction: { source, type: "advanceToReview" },
@@ -294,11 +343,14 @@ export const useBookingStore = create((set, get) => ({
 
   endRetrieve: (source) => {
     const state = get();
-    const locator = generateLocator();
+    const locator = state.pnr.softLocator || generateLocator();
     const response = buildERResponse(locator, state);
+    // Save PNR so it can be re-retrieved after navigation
+    const pnrSnapshot = buildCurrentPNR({ ...state, pnr: { ...state.pnr, locator } });
+    if (pnrSnapshot) PNRS[locator] = pnrSnapshot;
     set({
       stage: "CONFIRMED",
-      pnr: { locator, status: "Confirmed" },
+      pnr: { locator, status: "Confirmed", softLocator: null },
       _pendingEcho: source === "ui" ? { cmd: "ER", response } : null,
       _lastAction: { source, type: "endRetrieve" },
     });
@@ -369,11 +421,96 @@ export const useBookingStore = create((set, get) => ({
     return response;
   },
 
+  sellLongSell: (flightNum, date, cls, origin, dest, source) => {
+    const segment = {
+      seg: 1, flight: flightNum, cls, date,
+      route: `${origin}${dest}`, status: "NN1",
+      depTime: "0000", arrTime: "0000",
+    };
+    const response = `SOLD 1${cls}  ${flightNum} ${date} ${origin}${dest} NN1\n><`;
+    set({
+      stage: "PASSENGER_ENTRY",
+      booking: { flightId: null, flight: null, fare: { cls, price: 0, name: "Manual", basis: "MANUAL", bags: "N/A", changes: "N/A" }, segment },
+      _pendingEcho: source === "ui" ? { cmd: `0${flightNum}${cls}${date}${origin}${dest}NN1`, response } : null,
+      _lastAction: { source, type: "sellLongSell" },
+    });
+    return response;
+  },
+
+  endTransaction: (source) => {
+    const state = get();
+    const locator = state.pnr.softLocator || state.pnr.locator || generateLocator();
+    // Snapshot PNR data before resetting so it can be retrieved later
+    const pnrSnapshot = buildCurrentPNR({ ...state, pnr: { ...state.pnr, locator } });
+    if (pnrSnapshot) PNRS[locator] = pnrSnapshot;
+    const response = `--- END OF TRANSACTION ---\n** ${locator} ** SAVED\n><`;
+    set({
+      ...initialState,
+      terminal: state.terminal,
+      _etBanner: { locator, timestamp: Date.now() },
+      _pendingEcho: source === "ui" ? { cmd: "ET", response } : null,
+      _lastAction: { source, type: "endTransaction" },
+    });
+    return response;
+  },
+
+  _checkSoftPNR: () => {
+    const s = get();
+    if (s.pnr.softLocator) return;
+    const print = s.getPrintStatus();
+    if (print.P && print.R && print.I && print.N && print.T) {
+      const loc = generateLocator();
+      set({ pnr: { ...s.pnr, softLocator: loc } });
+    }
+  },
+
+  _autoCommit: (source) => {
+    const s = get();
+    const locator = generateLocator();
+
+    // Build minimal ER response
+    let out = `** AUTO-COMMIT **\n`;
+    out += `--- PNR CREATED ---\n`;
+    out += `RP/DELBR2101/DELBR2101\n`;
+    out += `** ${locator} **\n`;
+    s.passengers.forEach((p, i) => {
+      out += ` ${i + 1}.${p.lastName}/${p.firstName} ${p.title}\n`;
+    });
+    if (s.booking.segment) {
+      const seg = s.booking.segment;
+      out += ` ${seg.flight} ${seg.cls} ${seg.date} ${seg.route} ${seg.status}\n`;
+    }
+    out += `><`;
+
+    // Save PNR snapshot for later retrieval
+    const pnrSnapshot = buildCurrentPNR({ ...s, pnr: { locator, status: "Confirmed", softLocator: null } });
+    if (pnrSnapshot) PNRS[locator] = pnrSnapshot;
+
+    set({
+      stage: "CONFIRMED",
+      pnr: { locator, status: "Confirmed", softLocator: null },
+      _lastAction: { source, type: "autoCommit" },
+    });
+
+    return out;
+  },
+
+  navigateToStage: (targetStage, source) => {
+    const targetIdx = STAGES.indexOf(targetStage);
+    if (targetIdx < 0 || targetStage === get().stage) return;
+    set({
+      stage: targetStage,
+      _pendingEcho: source === "ui" ? { cmd: "", response: `** NAVIGATED TO ${targetStage.replace(/_/g, " ")}\n><` } : null,
+      _lastAction: { source, type: "navigateToStage" },
+    });
+  },
+
   resetBooking: (source) => {
     const response = "IGNORED\n><";
     set({
       ...initialState,
       terminal: get().terminal,
+      _etBanner: null,
       _pendingEcho: source === "ui" ? { cmd: "I", response } : null,
       _lastAction: { source, type: "resetBooking" },
     });

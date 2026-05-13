@@ -17,17 +17,18 @@ register({
   preview: (cmd) => cmd === "ER" ? "end and retrieve PNR" : null,
 });
 
-// E — end transaction
+// E — end transaction (same as ET)
 register({
   pattern: /^E$/,
-  stages: "*",
+  stages: ["REVIEW", "CONFIRMED"],
+  stageWarning: "** NO PNR DATA TO END\n><",
   parse: () => ({}),
   execute: (data, store) => {
     const missing = store.getMissingPrint();
-    if (missing.length > 0 && store.getStage() !== "IDLE") {
+    if (missing.length > 0) {
       return { response: `** CANNOT END - MISSING: ${missing.join(", ")}\n><` };
     }
-    return { response: "END OF TRANSACTION\n><" };
+    return { response: store.endTransaction("terminal") };
   },
 });
 

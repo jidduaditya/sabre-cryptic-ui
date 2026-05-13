@@ -11,6 +11,13 @@ export const IATA = {
   CDG: "PARIS",
   HKG: "HONG KONG",
   NRT: "TOKYO",
+  MAA: "CHENNAI",
+  BLR: "BANGALORE",
+  HYD: "HYDERABAD",
+  CCU: "KOLKATA",
+  LAX: "LOS ANGELES",
+  ORD: "CHICAGO",
+  NYC: "NEW YORK CITY",
 };
 
 // Reverse lookup: city name → code

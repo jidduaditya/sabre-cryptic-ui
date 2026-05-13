@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { C } from "../tokens";
+import { E } from "../tokens";
 
 export function DragDivider({ onDrag }) {
   const dragging = useRef(false);
@@ -32,15 +32,15 @@ export function DragDivider({ onDrag }) {
       onMouseDown={onMouseDown}
       style={{
         width: 6, flexShrink: 0, cursor: "col-resize",
-        background: C.border, display: "flex", alignItems: "center",
+        background: E.border, display: "flex", alignItems: "center",
         justifyContent: "center", transition: "background 0.15s",
       }}
-      onMouseEnter={(e) => e.currentTarget.style.background = C.accentBorder}
-      onMouseLeave={(e) => { if (!dragging.current) e.currentTarget.style.background = C.border; }}
+      onMouseEnter={(e) => e.currentTarget.style.background = E.accent}
+      onMouseLeave={(e) => { if (!dragging.current) e.currentTarget.style.background = E.border; }}
     >
       <div style={{
         width: 2, height: 32, borderRadius: 1,
-        background: C.accentBorder,
+        background: E.accent,
       }} />
     </div>
   );

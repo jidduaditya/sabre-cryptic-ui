@@ -1,12 +1,12 @@
-import { C } from "../../tokens";
+import { E } from "../../tokens";
 
 export function Tag({ children, color = "accent", style: extraStyle }) {
   const colors = {
-    accent: { bg: C.accentDim, border: C.accentBorder, text: C.accent },
-    green: { bg: C.greenDim, border: C.greenBorder, text: C.green },
-    amber: { bg: C.amberDim, border: C.amberBorder, text: C.amber },
-    red: { bg: C.redDim, border: C.redBorder, text: C.red },
-    muted: { bg: C.surface, border: C.border, text: C.muted },
+    accent: { bg: E.accentDim, border: E.accentBorder, text: E.accent },
+    green: { bg: E.greenDim, border: E.greenBorder, text: E.green },
+    amber: { bg: E.amberDim, border: E.amberBorder, text: E.amber },
+    red: { bg: E.redDim, border: E.redBorder, text: E.red },
+    muted: { bg: E.surface, border: E.border, text: E.muted },
   };
 
   const c = colors[color] || colors.accent;

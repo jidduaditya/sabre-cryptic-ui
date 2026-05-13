@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { C, sans, tMono } from "./tokens";
+import { useState, useCallback, useEffect, Component } from "react";
+import { C, E, sans, eSans, tMono } from "./tokens";
 import { useBookingStore } from "./store/bookingStore";
 import { TopBar } from "./components/TopBar";
 import { StageBar } from "./components/StageBar";
@@ -32,6 +32,35 @@ const PANEL_MAP = {
   SERVICING: ServicingPanel,
 };
 
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, textAlign: "center", fontFamily: eSans, color: E.text }}>
+          <p style={{ fontSize: 14, marginBottom: 16 }}>Something went wrong.</p>
+          <button onClick={() => {
+            this.setState({ hasError: false });
+            useBookingStore.getState().resetBooking("ui");
+          }} style={{
+            padding: "10px 20px", background: E.accent, color: "#fff",
+            border: "none", borderRadius: 2, fontSize: 13, cursor: "pointer",
+          }}>
+            Reset & Start Over
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const stage = useBookingStore(s => s.stage);
   const [splitPct, setSplitPct] = useState(38);
@@ -43,6 +72,19 @@ export default function App() {
       setShowTour(true);
     }
   }, []);
+
+  // Escape key to reset (FEATURE 1)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Escape" && stage !== "IDLE") {
+        // TopBar handles the confirmation flow
+        const topBarBtn = document.querySelector("[data-new-search]");
+        if (topBarBtn) topBarBtn.click();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [stage]);
 
   const onDrag = useCallback((clientX) => {
     const pct = (clientX / window.innerWidth) * 100;
@@ -79,10 +121,12 @@ export default function App() {
         <DragDivider onDrag={onDrag} />
 
         {/* RIGHT — visual */}
-        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", background: E.bg, color: E.text }}>
           <StageBar />
           <div style={{ flex: 1, overflow: "hidden" }}>
-            <RightPanel />
+            <ErrorBoundary>
+              <RightPanel />
+            </ErrorBoundary>
           </div>
         </div>
       </div>

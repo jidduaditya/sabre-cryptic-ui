@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { C, sans, mono } from "../../tokens";
+import { E, eSans, mono } from "../../tokens";
 import { useBookingStore } from "../../store/bookingStore";
 import { IATA } from "../../data/iata";
 
@@ -7,6 +7,7 @@ const cities = Object.entries(IATA).map(([code, name]) => ({ code, name }));
 
 export function SearchPanel() {
   const store = useBookingStore();
+  const etBanner = useBookingStore(s => s._etBanner);
   const [origin, setOrigin] = useState("BOM");
   const [dest, setDest] = useState("JFK");
   const [date, setDate] = useState("12JUN");
@@ -16,30 +17,44 @@ export function SearchPanel() {
 
   const handleSearch = () => {
     if (!origin || !dest || !date) return;
-    store.searchAvailability(origin, dest, date, "ui");
+    store.searchAvailability(origin, dest, date, "ui", null, paxCount);
   };
 
   const inputStyle = {
-    background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6,
-    padding: "10px 14px", color: C.text, fontSize: 14, fontFamily: sans,
+    background: E.surface, border: `1px solid ${E.border}`, borderRadius: 2,
+    padding: "10px 14px", color: E.text, fontSize: 14, fontFamily: eSans,
     outline: "none", width: "100%",
   };
 
   const labelStyle = {
-    color: C.muted, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
+    color: E.muted, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
     marginBottom: 6, display: "block",
   };
 
   return (
     <div style={{
       height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 40, fontFamily: sans,
+      padding: 40, fontFamily: eSans,
     }}>
       <div style={{ maxWidth: 420, width: "100%" }}>
-        <h2 style={{ color: C.text, fontSize: 22, fontWeight: 600, marginBottom: 6 }}>
+        {etBanner && (
+          <div style={{
+            padding: "10px 14px", marginBottom: 20, background: E.greenDim,
+            borderBottom: `1px solid ${E.greenBorder}`, display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <span style={{ color: E.green, fontSize: 12 }}>PNR {etBanner.locator} saved</span>
+            <button onClick={() => store.retrievePNR(etBanner.locator, "ui")} style={{
+              padding: "4px 10px", background: "transparent", border: `1px solid ${E.greenBorder}`,
+              borderRadius: 2, color: E.green, fontSize: 11, cursor: "pointer", fontFamily: eSans,
+            }}>
+              Retrieve *{etBanner.locator}
+            </button>
+          </div>
+        )}
+        <h2 style={{ color: E.text, fontSize: 24, fontWeight: 400, marginBottom: 6, fontFamily: "Georgia,serif" }}>
           Search Flights
         </h2>
-        <p style={{ color: C.muted, fontSize: 13, marginBottom: 32 }}>
+        <p style={{ color: E.muted, fontSize: 13, marginBottom: 32 }}>
           Find availability for your route. This generates an AN command.
         </p>
 
@@ -81,7 +96,7 @@ export function SearchPanel() {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button onClick={() => setPaxCount(Math.max(1, paxCount - 1))}
                 style={btnSmall}>−</button>
-              <span style={{ color: C.text, fontSize: 18, fontWeight: 600, minWidth: 20, textAlign: "center" }}>
+              <span style={{ color: E.text, fontSize: 18, fontWeight: 600, minWidth: 20, textAlign: "center" }}>
                 {paxCount}
               </span>
               <button onClick={() => setPaxCount(Math.min(9, paxCount + 1))}
@@ -91,18 +106,18 @@ export function SearchPanel() {
         </div>
 
         <button onClick={handleSearch} style={{
-          width: "100%", padding: "12px 0", background: C.accent, color: "#fff",
-          border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
-          cursor: "pointer", fontFamily: sans, letterSpacing: "0.03em",
+          width: "100%", padding: "12px 0", background: E.accent, color: "#fff",
+          border: "none", borderRadius: 2, fontSize: 14, fontWeight: 600,
+          cursor: "pointer", fontFamily: eSans, letterSpacing: "0.03em",
         }}>
           Search Flights
         </button>
 
         <div style={{
-          marginTop: 20, padding: "10px 14px", background: C.surface,
-          borderRadius: 6, border: `1px solid ${C.border}`,
+          marginTop: 20, padding: "10px 14px",
+          borderBottom: `1px solid ${E.border}`,
         }}>
-          <span style={{ color: C.muted, fontSize: 11, fontFamily: mono }}>
+          <span style={{ color: E.muted, fontSize: 11, fontFamily: mono }}>
             → AN{date}{origin}{dest}
           </span>
         </div>
@@ -112,8 +127,8 @@ export function SearchPanel() {
 }
 
 const btnSmall = {
-  width: 32, height: 32, background: C.surface, border: `1px solid ${C.border}`,
-  borderRadius: 6, color: C.text, fontSize: 16, cursor: "pointer",
+  width: 32, height: 32, background: E.surface, border: `1px solid ${E.border}`,
+  borderRadius: 2, color: E.text, fontSize: 16, cursor: "pointer",
   display: "flex", alignItems: "center", justifyContent: "center",
 };
 
@@ -127,7 +142,7 @@ function Dropdown({ items, filter, onSelect }) {
   return (
     <div style={{
       position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
-      background: "#0F172A", border: `1px solid ${C.border}`, borderRadius: 6,
+      background: E.bg, border: `1px solid ${E.border}`, borderRadius: 2,
       marginTop: 4, overflow: "hidden",
     }}>
       {filtered.map(i => (
@@ -135,13 +150,13 @@ function Dropdown({ items, filter, onSelect }) {
           onMouseDown={() => onSelect(i.code)}
           style={{
             padding: "8px 12px", cursor: "pointer", fontSize: 12,
-            color: C.text, borderBottom: `1px solid ${C.border}`,
+            color: E.text, borderBottom: `1px solid ${E.border}`,
           }}
-          onMouseEnter={e => e.currentTarget.style.background = C.surface}
+          onMouseEnter={e => e.currentTarget.style.background = E.surface}
           onMouseLeave={e => e.currentTarget.style.background = "transparent"}
         >
-          <span style={{ color: C.accent, fontWeight: 600 }}>{i.code}</span>
-          <span style={{ color: C.muted, marginLeft: 8 }}>{i.name}</span>
+          <span style={{ color: E.accent, fontWeight: 600 }}>{i.code}</span>
+          <span style={{ color: E.muted, marginLeft: 8 }}>{i.name}</span>
         </div>
       ))}
     </div>

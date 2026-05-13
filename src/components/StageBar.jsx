@@ -1,4 +1,4 @@
-import { C, sans } from "../tokens";
+import { E, eSans } from "../tokens";
 import { useBookingStore, STAGES } from "../store/bookingStore";
 
 const DISPLAY_STAGES = [
@@ -30,13 +30,15 @@ const STAGE_HINTS = {
 
 export function StageBar() {
   const stage = useBookingStore(s => s.stage);
+  const hasPNR = useBookingStore(s => s.pnr.locator || s.pnr.softLocator);
+  const store = useBookingStore();
   const stageIdx = STAGES.indexOf(stage);
 
   return (
     <div style={{
-      borderBottom: `1px solid ${C.border}`, padding: "6px 16px",
+      borderBottom: `1px solid ${E.border}`, padding: "6px 16px",
       display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
-      fontFamily: sans, fontSize: 10, background: "rgba(0,0,0,0.2)",
+      fontFamily: eSans, fontSize: 10, background: E.bg,
     }}>
       {DISPLAY_STAGES.map((ds, i) => {
         const dsIdx = STAGES.indexOf(ds.key);
@@ -45,30 +47,38 @@ export function StageBar() {
           (ds.key === "AVAILABILITY" && stage === "SELLING");
         const isCompleted = dsIdx < stageIdx && !isCurrent;
         const isFuture = dsIdx > stageIdx;
+        // Completed stages always clickable; if PNR exists, all stages are clickable
+        const canClick = !isCurrent && (isCompleted || (hasPNR && isFuture));
 
         return (
           <div key={ds.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {i > 0 && (
               <span style={{
-                color: isCompleted ? C.green : C.border,
+                color: isCompleted ? E.green : E.border,
                 fontSize: 8, margin: "0 2px",
               }}>
                 ›
               </span>
             )}
-            <span style={{
-              color: isCurrent ? C.accent : isCompleted ? C.green : C.muted,
-              fontWeight: isCurrent ? 600 : 400,
-              letterSpacing: "0.03em",
-              opacity: isFuture ? 0.4 : 1,
-            }}>
+            <span
+              onClick={canClick ? () => store.navigateToStage(ds.key, "ui") : undefined}
+              style={{
+                color: isCurrent ? E.accent : isCompleted ? E.green : canClick ? E.sub : E.muted,
+                fontWeight: isCurrent ? 600 : 400,
+                letterSpacing: "0.03em",
+                opacity: (isFuture && !canClick) ? 0.4 : 1,
+                cursor: canClick ? "pointer" : "default",
+                textDecoration: canClick ? "underline" : "none",
+                textUnderlineOffset: 3,
+              }}
+            >
               {ds.label}
             </span>
           </div>
         );
       })}
       <div style={{ flex: 1 }} />
-      <span style={{ color: C.muted, fontStyle: "italic", fontSize: 10 }}>
+      <span style={{ color: E.muted, fontStyle: "italic", fontSize: 10 }}>
         {STAGE_HINTS[stage] || ""}
       </span>
     </div>

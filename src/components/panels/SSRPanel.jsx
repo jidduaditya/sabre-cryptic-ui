@@ -1,4 +1,4 @@
-import { C, sans, mono } from "../../tokens";
+import { E, eSans, mono } from "../../tokens";
 import { useBookingStore } from "../../store/bookingStore";
 
 const MEALS = [
@@ -35,11 +35,11 @@ export function SSRPanel() {
   };
 
   return (
-    <div style={{ height: "100%", overflow: "auto", padding: "20px 24px", fontFamily: sans }}>
-      <h3 style={{ color: C.text, fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+    <div style={{ height: "100%", overflow: "auto", padding: "20px 24px", fontFamily: eSans }}>
+      <h3 style={{ color: E.text, fontSize: 18, fontWeight: 400, marginBottom: 4, fontFamily: "Georgia,serif" }}>
         Special Services
       </h3>
-      <p style={{ color: C.muted, fontSize: 12, marginBottom: 24 }}>
+      <p style={{ color: E.muted, fontSize: 12, marginBottom: 24 }}>
         Optional — add meal preferences or skip to seat selection.
       </p>
 
@@ -47,22 +47,22 @@ export function SSRPanel() {
         const meal = getPaxMeal(pax.id);
         return (
           <div key={pax.id} style={{
-            padding: 16, marginBottom: 12, borderRadius: 8,
-            border: `1px solid ${meal ? C.greenBorder : C.border}`,
-            background: meal ? C.greenDim : "rgba(255,255,255,0.02)",
+            padding: 16, marginBottom: 12,
+            borderBottom: `1px solid ${meal ? E.greenBorder : E.border}`,
+            background: meal ? E.greenDim : "transparent",
           }}>
             <div style={{
               display: "flex", alignItems: "center", gap: 10, marginBottom: 12,
             }}>
-              <span style={{ color: C.accent, fontFamily: mono, fontSize: 11 }}>{pax.id}</span>
-              <span style={{ color: C.text, fontSize: 13 }}>
+              <span style={{ color: E.accent, fontFamily: mono, fontSize: 11 }}>{pax.id}</span>
+              <span style={{ color: E.text, fontSize: 13 }}>
                 {pax.lastName}/{pax.firstName} {pax.title}
               </span>
               {meal && (
                 <span style={{
                   marginLeft: "auto", padding: "2px 8px", borderRadius: 4,
-                  background: C.greenDim, color: C.green, fontSize: 10,
-                  border: `1px solid ${C.greenBorder}`,
+                  background: E.greenDim, color: E.green, fontSize: 10,
+                  border: `1px solid ${E.greenBorder}`,
                 }}>
                   {meal.code}
                 </span>
@@ -74,15 +74,15 @@ export function SSRPanel() {
                 {MEALS.map(m => (
                   <button key={m.code} onClick={() => handleMeal(m.code, pax.id)}
                     style={{
-                      padding: "6px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer",
-                      background: "transparent", border: `1px solid ${C.border}`,
-                      color: C.text, fontFamily: sans,
+                      padding: "6px 10px", borderRadius: 2, fontSize: 11, cursor: "pointer",
+                      background: "transparent", border: `1px solid ${E.border}`,
+                      color: E.text, fontFamily: eSans,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accentBorder; e.currentTarget.style.color = C.accent; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.text; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = E.accentBorder; e.currentTarget.style.color = E.accent; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = E.border; e.currentTarget.style.color = E.text; }}
                   >
                     <span style={{ fontWeight: 600 }}>{m.code}</span>
-                    <span style={{ color: C.muted, marginLeft: 6, fontSize: 10 }}>{m.name}</span>
+                    <span style={{ color: E.muted, marginLeft: 6, fontSize: 10 }}>{m.name}</span>
                   </button>
                 ))}
               </div>
@@ -94,15 +94,15 @@ export function SSRPanel() {
       <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
         <button onClick={handleSkip} style={{
           flex: 1, padding: "10px", background: "transparent",
-          color: C.muted, border: `1px solid ${C.border}`, borderRadius: 6,
-          fontSize: 13, cursor: "pointer", fontFamily: sans,
+          color: E.muted, border: `1px solid ${E.border}`, borderRadius: 2,
+          fontSize: 13, cursor: "pointer", fontFamily: eSans,
         }}>
           Skip
         </button>
         <button onClick={handleContinue} style={{
           flex: 1, padding: "10px", background: "transparent",
-          color: C.accent, border: `1px solid ${C.accentBorder}`, borderRadius: 6,
-          fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: sans,
+          color: E.accent, border: `1px solid ${E.accentBorder}`, borderRadius: 2,
+          fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: eSans,
         }}>
           Continue to Seats →
         </button>

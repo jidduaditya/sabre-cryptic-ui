@@ -50,12 +50,19 @@ register({
   },
 });
 
-// ET — end transaction
+// ET — end transaction (save and close)
 register({
   pattern: /^ET$/,
-  stages: "*",
+  stages: ["REVIEW", "CONFIRMED"],
+  stageWarning: "** NO PNR DATA TO END\n><",
   parse: () => ({}),
-  execute: () => ({ response: "END OF TRANSACTION\n><" }),
+  execute: (data, store) => {
+    const missing = store.getMissingPrint();
+    if (missing.length > 0) {
+      return { response: `** CANNOT END - MISSING: ${missing.join(", ")}\n><` };
+    }
+    return { response: store.endTransaction("terminal") };
+  },
 });
 
 // IR — ignore and retrieve
