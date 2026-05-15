@@ -1,4 +1,5 @@
 import { register } from "../registry";
+import { requirePnr } from "../session";
 
 // NM1SHARMA/RAJESH MR
 register({
@@ -7,6 +8,8 @@ register({
   stageWarning: "** NO SEGMENT SOLD - SELL FIRST\n><",
   parse: (m) => ({ count: +m[1], lastName: m[2], firstName: m[3], title: m[4] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const { passengers, search } = store;
     if (passengers.length >= search.paxCount) {
       return { response: `** MAX PASSENGERS REACHED - ${search.paxCount} ALREADY ENTERED\n><` };
@@ -24,6 +27,8 @@ register({
   stageWarning: "** NO SEGMENT SOLD - SELL FIRST\n><",
   parse: (m) => ({ count: +m[1], lastName: m[2], firstName: m[3], title: "MR" }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const { passengers, search } = store;
     if (passengers.length >= search.paxCount) {
       return { response: `** MAX PASSENGERS REACHED - ${search.paxCount} ALREADY ENTERED\n><` };

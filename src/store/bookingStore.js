@@ -3,6 +3,7 @@ import { FLIGHTS } from "../data/flights";
 import { PNRS } from "../data/pnrs";
 import { SEATMAP } from "../data/seatmap";
 import { getFareQuote } from "../data/fares";
+import { session, setPnrContext, resetSession } from "../engine/session";
 
 const STAGES = [
   "IDLE", "SEARCHING", "AVAILABILITY", "SELLING",
@@ -153,6 +154,7 @@ export const useBookingStore = create((set, get) => ({
     };
 
     const response = buildSellResponse(flight, cls, date);
+    setPnrContext(true);
     set({
       stage: "PASSENGER_ENTRY",
       booking: { flightId, flight, fare, segment },
@@ -216,12 +218,51 @@ export const useBookingStore = create((set, get) => ({
   },
 
   addSSR: (code, segment, pax, source) => {
-    const response = `SSR ${code} ${get().booking?.flight?.code || "AA"} HK1\n><`;
-    set({
-      ssrs: [...get().ssrs, { code, segment, pax, detail: "" }],
-      _pendingEcho: source === "ui" ? { cmd: `3${code}${segment}-${pax}`, response } : null,
-      _lastAction: { source, type: "addSSR" },
-    });
+    const state = get();
+    const airline = state.booking?.flight?.code || state.servicing?.pnrData?.segments?.[0]?.flight?.split(" ")[0] || "AA";
+    const response = `SSR ${code} ${airline} HK1\n><`;
+
+    // If servicing, mutate the PNR data
+    if (state.stage === "SERVICING" && state.servicing?.pnrData) {
+      const pnr = state.servicing.pnrData;
+      const nextLine = Math.max(
+        ...(pnr.ssrs || []).map(s => s.line || 0),
+        ...(pnr.remarks || []).map(r => r.line || 0),
+        4
+      ) + 1;
+      pnr.ssrs = [...(pnr.ssrs || []), {
+        line: nextLine, code, airline, status: "HK1",
+        detail: `${pnr.segments?.[0]?.route || ""} ${segment} ${pax}`,
+      }];
+
+      // Update meal service display
+      const MEAL_CODES = ["VGML", "MOML", "KSML", "HSML", "AVML", "VLML", "DBML", "LFML", "SFML", "BBML"];
+      if (MEAL_CODES.includes(code)) {
+        const mealSvc = pnr.services?.find(s => s.type === "Meal");
+        if (mealSvc) {
+          mealSvc.detail = `${mealSvc.detail}/${code}`;
+        } else if (pnr.services) {
+          pnr.services.push({ icon: "\uD83C\uDF7D\uFE0F", type: "Meal", detail: code, status: "Confirmed" });
+        }
+      }
+
+      // Persist to session
+      if (state.servicing.activeLocator) {
+        session.pnrs[state.servicing.activeLocator] = pnr;
+      }
+
+      set({
+        servicing: { ...state.servicing, pnrData: { ...pnr } },
+        _pendingEcho: source === "ui" ? { cmd: `3${code}${segment}-${pax}`, response } : null,
+        _lastAction: { source, type: "addSSR" },
+      });
+    } else {
+      set({
+        ssrs: [...state.ssrs, { code, segment, pax, detail: "" }],
+        _pendingEcho: source === "ui" ? { cmd: `3${code}${segment}-${pax}`, response } : null,
+        _lastAction: { source, type: "addSSR" },
+      });
+    }
     return response;
   },
 
@@ -240,19 +281,74 @@ export const useBookingStore = create((set, get) => ({
   },
 
   assignSeat: (seat, segment, pax, source) => {
-    const currentSeats = get().seats;
-    const paxCount = get().search.paxCount;
+    const state = get();
+
+    // Validate seat availability against seatmap
+    const rowNum = parseInt(seat);
+    const colLetter = seat.replace(/^\d+/, "");
+    let seatAvailable = true;
+    for (const cabin of session.seatmap.cabins) {
+      if (rowNum >= cabin.rows[0] && rowNum <= cabin.rows[1]) {
+        const mapVal = cabin.map[seat];
+        if (mapVal === "X") {
+          // Check if it's the current pax's own seat being re-selected
+          const ownSeat = state.servicing?.pnrData?.seats?.some(
+            s => s.seat === seat && s.pax === pax
+          );
+          if (!ownSeat) seatAvailable = false;
+        }
+        break;
+      }
+    }
+    if (!seatAvailable) {
+      return `SEAT ${seat} NOT AVAILABLE - OCCUPIED\n><`;
+    }
+
+    const currentSeats = state.seats;
+    const paxCount = state.search.paxCount;
     const isReplacement = currentSeats.some(s => s.segment === segment && s.pax === pax);
-    if (!isReplacement && currentSeats.length >= paxCount) {
+    if (!isReplacement && currentSeats.length >= paxCount && state.stage !== "SERVICING") {
       return `** ALL PASSENGERS HAVE SEATS ASSIGNED\n><`;
     }
     const filtered = currentSeats.filter(s => !(s.segment === segment && s.pax === pax));
     const response = `SEAT ${seat} ASSIGNED - ${pax}\n><`;
-    set({
-      seats: [...filtered, { segment, seat, pax }],
-      _pendingEcho: source === "ui" ? { cmd: `4G${segment}/${seat}-${pax}`, response } : null,
-      _lastAction: { source, type: "assignSeat" },
-    });
+
+    // If servicing, mutate the PNR data and seatmap
+    if (state.stage === "SERVICING" && state.servicing?.pnrData) {
+      const pnr = state.servicing.pnrData;
+      const oldSeat = pnr.seats?.find(s => s.seg === segment && s.pax === pax);
+
+      // Update seatmap: free old seat, occupy new seat
+      for (const cabin of session.seatmap.cabins) {
+        if (oldSeat) cabin.map[oldSeat.seat] = "O";
+        cabin.map[seat] = "X";
+      }
+
+      // Mutate PNR seats
+      pnr.seats = (pnr.seats || []).filter(s => !(s.seg === segment && s.pax === pax));
+      pnr.seats.push({ seg: segment, seat, pax });
+
+      // Update services display
+      const seatSvc = pnr.services?.find(s => s.type === "Seat");
+      if (seatSvc) seatSvc.detail = `${seat} · Reassigned`;
+
+      // Persist to session
+      if (state.servicing.activeLocator) {
+        session.pnrs[state.servicing.activeLocator] = pnr;
+      }
+
+      set({
+        servicing: { ...state.servicing, pnrData: { ...pnr } },
+        _pendingEcho: source === "ui" ? { cmd: `4G${segment}/${seat}-${pax}`, response } : null,
+        _lastAction: { source, type: "assignSeat" },
+      });
+    } else {
+      set({
+        seats: [...filtered, { segment, seat, pax }],
+        _pendingEcho: source === "ui" ? { cmd: `4G${segment}/${seat}-${pax}`, response } : null,
+        _lastAction: { source, type: "assignSeat" },
+      });
+    }
     return response;
   },
 
@@ -331,7 +427,10 @@ export const useBookingStore = create((set, get) => ({
     const response = buildERResponse(locator, state);
     // Save PNR so it can be re-retrieved after navigation
     const pnrSnapshot = buildCurrentPNR({ ...state, pnr: { ...state.pnr, locator } });
-    if (pnrSnapshot) PNRS[locator] = pnrSnapshot;
+    if (pnrSnapshot) {
+      PNRS[locator] = pnrSnapshot;
+      session.pnrs[locator] = pnrSnapshot;
+    }
     set({
       stage: "CONFIRMED",
       pnr: { locator, status: "Confirmed", softLocator: null },
@@ -342,11 +441,12 @@ export const useBookingStore = create((set, get) => ({
   },
 
   retrievePNR: (locator, source) => {
-    const mockPNR = PNRS[locator];
+    const mockPNR = session.pnrs[locator] || PNRS[locator];
     const currentPNR = get().pnr.locator === locator ? buildCurrentPNR(get()) : null;
     const pnrData = mockPNR || currentPNR;
     if (!pnrData) return false;
 
+    setPnrContext(true);
     const response = buildPNRDisplay(pnrData);
     set({
       stage: "SERVICING",
@@ -359,10 +459,20 @@ export const useBookingStore = create((set, get) => ({
 
   priceItinerary: (source) => {
     const state = get();
-    const fq = state.booking.flight
+    // Try booking-flow fare first
+    let fq = state.booking.flight
       ? getFareQuote(state.booking.flightId, state.booking.fare?.cls || "Y")
       : null;
-    const response = fq ? buildPriceResponse(fq, state) : "** NO ITINERARY TO PRICE\n><";
+    // Fall back to servicing PNR fare data
+    let response;
+    if (fq) {
+      response = buildPriceResponse(fq, state);
+    } else if (state.servicing?.pnrData?.fare) {
+      const fare = state.servicing.pnrData.fare;
+      response = `** PRICE QUOTE **\nBASE FARE:  ${fare.currency} ${fare.base.toFixed ? fare.base.toFixed(2) : fare.base + ".00"}\nTAXES:      ${fare.currency} ${fare.taxes.toFixed ? fare.taxes.toFixed(2) : fare.taxes + ".00"}\nTOTAL:      ${fare.currency} ${fare.total.toFixed ? fare.total.toFixed(2) : fare.total + ".00"}\n><`;
+    } else {
+      response = "** NO ITINERARY TO PRICE\n><";
+    }
     set({
       _pendingEcho: source === "ui" ? { cmd: "WP", response } : null,
       _lastAction: { source, type: "priceItinerary" },
@@ -412,6 +522,7 @@ export const useBookingStore = create((set, get) => ({
       depTime: "0000", arrTime: "0000",
     };
     const response = `SOLD 1${cls}  ${flightNum} ${date} ${origin}${dest} NN1\n><`;
+    setPnrContext(true);
     set({
       stage: "PASSENGER_ENTRY",
       booking: { flightId: null, flight: null, fare: { cls, price: 0, name: "Manual", basis: "MANUAL", bags: "N/A", changes: "N/A" }, segment },
@@ -426,8 +537,12 @@ export const useBookingStore = create((set, get) => ({
     const locator = state.pnr.softLocator || state.pnr.locator || generateLocator();
     // Snapshot PNR data before resetting so it can be retrieved later
     const pnrSnapshot = buildCurrentPNR({ ...state, pnr: { ...state.pnr, locator } });
-    if (pnrSnapshot) PNRS[locator] = pnrSnapshot;
+    if (pnrSnapshot) {
+      PNRS[locator] = pnrSnapshot;
+      session.pnrs[locator] = pnrSnapshot;
+    }
     const response = `--- END OF TRANSACTION ---\n** ${locator} ** SAVED\n><`;
+    setPnrContext(false);
     set({
       ...initialState,
       terminal: state.terminal,
@@ -460,6 +575,7 @@ export const useBookingStore = create((set, get) => ({
 
   resetBooking: (source) => {
     const response = "IGNORED\n><";
+    resetSession();
     set({
       ...initialState,
       terminal: get().terminal,

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { E, eSans, mono } from "../../tokens";
 import { useBookingStore } from "../../store/bookingStore";
-import { SEATMAP } from "../../data/seatmap";
+import { session } from "../../engine/session";
 
 const MEALS = [
   { code: "VGML", name: "Vegetarian" }, { code: "MOML", name: "Muslim" },
@@ -176,7 +176,7 @@ function SeatsTab({ pnr, store }) {
       </p>
 
       {/* Mini seat map */}
-      {SEATMAP.cabins.map(cabin => (
+      {session.seatmap.cabins.map(cabin => (
         <div key={cabin.name} style={{ marginBottom: 16 }}>
           <div style={{ color: E.muted, fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", marginBottom: 6 }}>
             {cabin.name.toUpperCase()} ({cabin.config})

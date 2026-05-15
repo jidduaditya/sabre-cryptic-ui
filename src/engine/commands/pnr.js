@@ -1,4 +1,5 @@
 import { register } from "../registry";
+import { session } from "../session";
 import { PNRS } from "../../data/pnrs";
 
 function getCurrentLocator(store) {
@@ -163,7 +164,8 @@ register({
   stages: "*",
   parse: (m) => ({ name: m[1] }),
   execute: (data, store) => {
-    for (const [loc, pnr] of Object.entries(PNRS)) {
+    const allPnrs = { ...PNRS, ...session.pnrs };
+    for (const [loc, pnr] of Object.entries(allPnrs)) {
       if (pnr.passengers?.some(p => p.name.includes(data.name))) {
         const result = store.retrievePNR(loc, "terminal");
         return { response: result || `** NO PNR FOUND FOR ${data.name}\n><` };

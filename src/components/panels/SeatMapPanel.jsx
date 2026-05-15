@@ -1,6 +1,6 @@
 import { E, eSans, mono } from "../../tokens";
 import { useBookingStore } from "../../store/bookingStore";
-import { SEATMAP } from "../../data/seatmap";
+import { session } from "../../engine/session";
 
 export function SeatMapPanel() {
   const seats = useBookingStore(s => s.seats);
@@ -54,7 +54,7 @@ export function SeatMapPanel() {
         <h3 style={{ color: E.text, fontSize: 18, fontWeight: 400, margin: 0, fontFamily: "Georgia,serif" }}>
           Seat Selection
         </h3>
-        <span style={{ color: E.muted, fontSize: 11 }}>{SEATMAP.aircraft}</span>
+        <span style={{ color: E.muted, fontSize: 11 }}>{session.seatmap.aircraft}</span>
         {booking.segment && (
           <span style={{ color: E.accent, fontSize: 11 }}>
             {booking.segment.flight} · {bookedCls} class
@@ -98,7 +98,7 @@ export function SeatMapPanel() {
       )}
 
       {/* Seat maps */}
-      {SEATMAP.cabins.map(cabin => {
+      {session.seatmap.cabins.map(cabin => {
         const showCabin = isBiz ? cabin.cls === "J" : cabin.cls === "Y";
         if (!showCabin) return null;
 

@@ -1,4 +1,5 @@
 import { register } from "../registry";
+import { requirePnr } from "../session";
 
 // WP — price itinerary
 register({
@@ -6,7 +7,11 @@ register({
   stages: ["SERVICING", "CONFIRMED", "REVIEW", "TICKETING", "SSR_ENTRY", "SEAT_SELECTION"],
   stageWarning: "** NO ITINERARY TO PRICE\n><",
   parse: () => ({}),
-  execute: (data, store) => ({ response: store.priceItinerary("terminal") }),
+  execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: store.priceItinerary("terminal") };
+  },
   preview: (cmd) => cmd === "WP" ? "price itinerary" : null,
 });
 
@@ -15,7 +20,11 @@ register({
   pattern: /^WPNC$/,
   stages: ["SERVICING", "CONFIRMED", "REVIEW", "TICKETING"],
   parse: () => ({}),
-  execute: (data, store) => ({ response: store.priceItinerary("terminal") }),
+  execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: store.priceItinerary("terminal") };
+  },
   preview: (cmd) => cmd.startsWith("WPNC") ? "lowest available fare" : null,
 });
 
@@ -24,7 +33,11 @@ register({
   pattern: /^WPNI$/,
   stages: ["SERVICING", "CONFIRMED", "REVIEW", "TICKETING"],
   parse: () => ({}),
-  execute: (data, store) => ({ response: store.priceItinerary("terminal") }),
+  execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: store.priceItinerary("terminal") };
+  },
   preview: (cmd) => cmd.startsWith("WPNI") ? "lowest fare, alternate flights" : null,
 });
 
@@ -33,7 +46,11 @@ register({
   pattern: /^PQ$/,
   stages: ["SERVICING", "CONFIRMED", "REVIEW"],
   parse: () => ({}),
-  execute: () => ({ response: "PRICE QUOTE RETAINED - PQ1\n><" }),
+  execute: () => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: "PRICE QUOTE RETAINED - PQ1\n><" };
+  },
 });
 
 // *PQ — display stored fares

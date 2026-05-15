@@ -1,4 +1,5 @@
 import { register } from "../registry";
+import { requirePnr } from "../session";
 
 const MEAL_CODES = ["VGML", "MOML", "KSML", "HSML", "AVML", "VLML", "DBML", "LFML", "SFML", "BBML"];
 
@@ -9,6 +10,8 @@ register({
   stageWarning: "** NO SEGMENT IN CONTEXT\n><",
   parse: (m) => ({ code: m[1], segment: +m[2], pax: m[3] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.addSSR(data.code, data.segment, data.pax, "terminal");
     return { response: resp };
   },
@@ -26,6 +29,8 @@ register({
   stages: ["SSR_ENTRY", "PASSENGER_ENTRY", "CONTACT_ENTRY", "SEAT_SELECTION", "TICKETING", "REVIEW", "SERVICING"],
   parse: (m) => ({ code: m[1], segment: +m[2], pax: m[3] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.addSSR(data.code, data.segment, data.pax, "terminal");
     return { response: resp };
   },

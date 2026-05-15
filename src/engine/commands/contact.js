@@ -1,4 +1,5 @@
 import { register } from "../registry";
+import { requirePnr } from "../session";
 
 // 9DEL 9999999-M — phone
 register({
@@ -7,6 +8,8 @@ register({
   stageWarning: "** ADD NAME FIRST\n><",
   parse: (m) => ({ city: m[1], number: m[2], type: m[3] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.addContact(data.number, data.type, data.city, "terminal");
     return { response: resp };
   },
@@ -19,6 +22,8 @@ register({
   stages: ["CONTACT_ENTRY", "PASSENGER_ENTRY", "SSR_ENTRY", "SEAT_SELECTION", "TICKETING", "REVIEW"],
   parse: (m) => ({ city: m[1], number: m[2], type: m[3] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.addContact(data.number, data.type, data.city, "terminal");
     return { response: resp };
   },
@@ -30,6 +35,8 @@ register({
   stages: "*",
   parse: (m) => ({ email: m[1] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.addEmail(data.email, "terminal");
     return { response: resp };
   },
@@ -42,6 +49,8 @@ register({
   stages: "*",
   parse: (m) => ({ email: m[1] }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.addEmail(data.email, "terminal");
     return { response: resp };
   },

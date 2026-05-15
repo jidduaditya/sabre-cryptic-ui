@@ -1,5 +1,5 @@
 import { register } from "../registry";
-import { SEATMAP } from "../../data/seatmap";
+import { session, requirePnr } from "../session";
 
 // 4G1* — display seat map
 register({
@@ -8,8 +8,11 @@ register({
   stageWarning: "** NO SEGMENT IN CONTEXT\n><",
   parse: (m) => ({ segment: +m[1] }),
   execute: () => {
-    let out = `** SEAT MAP - ${SEATMAP.aircraft} **\n`;
-    for (const cabin of SEATMAP.cabins) {
+    const err = requirePnr();
+    if (err) return { response: err };
+    const seatmap = session.seatmap;
+    let out = `** SEAT MAP - ${seatmap.aircraft} **\n`;
+    for (const cabin of seatmap.cabins) {
       out += `--- ${cabin.name} (${cabin.config}) ---\n`;
       out += `   ${cabin.seats.join(" ")}\n`;
       for (let r = cabin.rows[0]; r <= cabin.rows[1]; r++) {
@@ -33,11 +36,8 @@ register({
   stageWarning: "** NO SEGMENT IN CONTEXT\n><",
   parse: (m) => ({ segment: +m[1], seat: m[2], pax: m[3] }),
   execute: (data, store) => {
-    let available = false;
-    for (const cabin of SEATMAP.cabins) {
-      if (cabin.map[data.seat] === "O") { available = true; break; }
-    }
-    if (!available) return { response: `** SEAT ${data.seat} NOT AVAILABLE\n><` };
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.assignSeat(data.seat, data.segment, data.pax, "terminal");
     return { response: resp };
   },
@@ -51,6 +51,8 @@ register({
   stageWarning: "** NO SEGMENT IN CONTEXT\n><",
   parse: (m) => ({ segment: +m[1], seat: m[2], pax: "1.1" }),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const resp = store.assignSeat(data.seat, data.segment, data.pax, "terminal");
     return { response: resp };
   },

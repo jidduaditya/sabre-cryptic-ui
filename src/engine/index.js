@@ -1,3 +1,5 @@
+// Import session (must load before commands)
+import "./session";
 // Import all command modules (order matters — more specific first)
 import "./commands/availability";
 import "./commands/sell";

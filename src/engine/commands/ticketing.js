@@ -1,4 +1,5 @@
 import { register } from "../registry";
+import { requirePnr } from "../session";
 
 // 7TAW14JUN/ — ticket time limit
 register({
@@ -6,7 +7,11 @@ register({
   stages: ["TICKETING", "PASSENGER_ENTRY", "CONTACT_ENTRY", "SSR_ENTRY", "SEAT_SELECTION", "REVIEW"],
   stageWarning: "** ADD NAME AND CONTACT FIRST\n><",
   parse: (m) => ({ date: m[1] }),
-  execute: (data, store) => ({ response: store.setTTL(data.date, "terminal") }),
+  execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: store.setTTL(data.date, "terminal") };
+  },
   preview: (cmd) => /^7TAW/.test(cmd) ? "ticket time limit" : null,
 });
 
@@ -19,7 +24,11 @@ register({
     const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
     return { date: `${now.getDate()}${months[now.getMonth()]}` };
   },
-  execute: (data, store) => ({ response: store.setTTL(data.date, "terminal") }),
+  execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: store.setTTL(data.date, "terminal") };
+  },
 });
 
 // 6RAJESH — received from
@@ -27,7 +36,11 @@ register({
   pattern: /^6([A-Z][A-Z\s]*)$/,
   stages: "*",
   parse: (m) => ({ name: m[1].trim() }),
-  execute: (data, store) => ({ response: store.setReceivedFrom(data.name, "terminal") }),
+  execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: store.setReceivedFrom(data.name, "terminal") };
+  },
   preview: (cmd) => /^6[A-Z]/.test(cmd) ? "received from" : null,
 });
 

@@ -1,12 +1,17 @@
 import { register } from "../registry";
 import { IATA } from "../../data/iata";
+import { requirePnr } from "../session";
 
 // 5REMARK — general remark
 register({
   pattern: /^5([A-Z].+)$/,
   stages: "*",
   parse: (m) => ({ text: m[1] }),
-  execute: (data) => ({ response: `REMARK ADDED: ${data.text}\n><` }),
+  execute: (data) => {
+    const err = requirePnr();
+    if (err) return { response: err };
+    return { response: `REMARK ADDED: ${data.text}\n><` };
+  },
 });
 
 // W/-CCLONDON — encode city
@@ -57,6 +62,8 @@ register({
   stageWarning: "** NO PNR DATA TO END\n><",
   parse: () => ({}),
   execute: (data, store) => {
+    const err = requirePnr();
+    if (err) return { response: err };
     const missing = store.getMissingPrint();
     if (missing.length > 0) {
       return { response: `** CANNOT END - MISSING: ${missing.join(", ")}\n><` };
